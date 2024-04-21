@@ -1,11 +1,10 @@
 import os
-import pickle
 import dotenv
+import pickle
 import requests
 import numpy as np
-from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor
 import google.generativeai as genai
+from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -21,7 +20,7 @@ gemini = genai.GenerativeModel('gemini-pro')
 model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2", device_map="auto")
 tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2", padding_side="left")
 tokenizer.pad_token = tokenizer.eos_token
-device = "cpu" # the device to load the model onto
+device = "cpu"
 
 
 @dataclass
@@ -59,10 +58,7 @@ def _generate_embedding(text: str) -> Embedding:
 
 
 def generate_texts(prompts: list[str]) -> list[str]:
-    model_inputs = tokenizer(
-         prompts, return_tensors="pt", padding=True
-    ).to(device)
-
+    model_inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
     generated_ids = model.generate(**model_inputs, max_new_tokens=1000, do_sample=True)
     decoded = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
     return decoded[0]
@@ -135,12 +131,12 @@ def _retrieve_dfs(root: Node, query_embedding: Embedding, max_depth: int, min_si
             (neighbor, cosine_similarity(edge_embedding, query_embedding))
             for neighbor, edge_embedding in node.neighbors
         ], key=lambda x: x[1], reverse=True)
+
         candidates = [
             (neighbor, depth + 1)
             for neighbor, score in neigbors_scores
             if score >= min_similarity
         ]
-        candidates = [(x[0], depth + 1) for neighb in neigbors_scores if x[1] >= min_similarity]
 
     queue.extend(candidates)
     
@@ -182,4 +178,10 @@ def main():
         print(node.text)
 
 
-main()
+# main()
+
+x = generate_texts(['colors are: blue, yellow, '])
+print(x)
+print(x[0])
+print(type(x))
+print(type(x[0]))
