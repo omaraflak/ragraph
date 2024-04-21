@@ -1,0 +1,4 @@
+google-generativeai
+python-dotenv
+sentence_transformers
+numpy
