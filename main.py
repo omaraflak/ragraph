@@ -1,20 +1,27 @@
 import os
 import pickle
 import dotenv
+import requests
 import numpy as np
 from dataclasses import dataclass
-from sentence_transformers import SentenceTransformer
 from concurrent.futures import ThreadPoolExecutor
 import google.generativeai as genai
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 Embedding = list[float]
 
 
 dotenv.load_dotenv()
-genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
-model = SentenceTransformer('Alibaba-NLP/gte-large-en-v1.5', trust_remote_code=True)
+GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
+
+genai.configure(api_key=GOOGLE_API_KEY)
 gemini = genai.GenerativeModel('gemini-pro')
+
+model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2", device_map="auto")
+tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2", padding_side="left")
+tokenizer.pad_token = tokenizer.eos_token
+device = "cpu" # the device to load the model onto
 
 
 @dataclass
@@ -29,7 +36,22 @@ class Node:
 
 
 def generate_embeddings(texts: list[str]) -> list[Embedding]:
-    return [x.tolist() for x in model.encode(texts)]
+    model = 'models/text-embedding-004'
+    url = f"https://generativelanguage.googleapis.com/v1beta/{model}:batchEmbedContents?key={GOOGLE_API_KEY}"
+    json = {
+        'requests': [
+            {
+                'model': model,
+                'content': {
+                    'parts': [{'text': text}],
+                    'role': 'user'   
+                }
+            }
+            for text in texts
+        ]
+    }
+    result = requests.post(url, json=json).json()
+    return [x['values'] for x in result['embeddings']]
 
 
 def _generate_embedding(text: str) -> Embedding:
@@ -37,12 +59,16 @@ def _generate_embedding(text: str) -> Embedding:
 
 
 def generate_texts(prompts: list[str]) -> list[str]:
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(gemini.generate_content, prompts))
-        return [result.text for result in results]
+    model_inputs = tokenizer(
+         prompts, return_tensors="pt", padding=True
+    ).to(device)
+
+    generated_ids = model.generate(**model_inputs, max_new_tokens=1000, do_sample=True)
+    decoded = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+    return decoded[0]
 
 
-def cosine_similarity(a: Embedding, b: Embedding) -> list:
+def cosine_similarity(a: Embedding, b: Embedding) -> float:
     return np.dot(a, np.transpose(b)) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
@@ -109,10 +135,14 @@ def _retrieve_dfs(root: Node, query_embedding: Embedding, max_depth: int, min_si
             (neighbor, cosine_similarity(edge_embedding, query_embedding))
             for neighbor, edge_embedding in node.neighbors
         ], key=lambda x: x[1], reverse=True)
+        candidates = [
+            (neighbor, depth + 1)
+            for neighbor, score in neigbors_scores
+            if score >= min_similarity
+        ]
+        candidates = [(x[0], depth + 1) for neighb in neigbors_scores if x[1] >= min_similarity]
 
-        candidates = [x[0] for x in neigbors_scores if x[1] >= min_similarity]
-
-        queue.extend(candidates)
+    queue.extend(candidates)
     
     return list(result)
 
@@ -124,7 +154,7 @@ def retrieve(nodes: list[Node], query: str, top_k: int, max_depth: int, min_simi
     similar_nodes = similar_nodes[:top_k]
     return list({
         x
-        for node in similar_nodes
+        for node, _ in similar_nodes
         for x in _retrieve_dfs(node, query_embedding, max_depth, min_similarity)
     })
 
@@ -152,8 +182,4 @@ def main():
         print(node.text)
 
 
-# main()
-# print(_generate_embedding('hello'))
-
-for x in generate_texts(['my name is ', 'some colors are: yellow, red, ']):
-    print(x)
+main()
