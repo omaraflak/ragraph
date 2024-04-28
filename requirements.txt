@@ -2,6 +2,7 @@ google-generativeai
 dataclasses_json
 python-dotenv
 bitsandbytes
+sentence-transformers
 transformers
 accelerate
 numpy

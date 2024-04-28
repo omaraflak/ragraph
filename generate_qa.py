@@ -2,7 +2,7 @@ import json
 import fire
 import prompts
 from model import Model
-from common import read_data_chunks
+from common import get_model, read_data_chunks
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin
 
@@ -79,8 +79,8 @@ def generate_dataset(model: Model, chunks: list[str]) -> QuestionAnswerDataset:
     return QuestionAnswerDataset(items)
 
 
-def main(input_txt_file: str = 'source.txt', output_json_file: str = 'qa.json'):
-    model = Model()
+def main(input_txt_file: str = 'source.txt', output_json_file: str = 'qa.json', model_name: str = 'gemini'):
+    model = get_model(model_name)
     chunks = read_data_chunks(input_txt_file)
     dataset = generate_dataset(model, chunks)
     with open(output_json_file, 'w') as f:

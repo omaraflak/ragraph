@@ -4,7 +4,7 @@ import prompts
 import numpy as np
 from dataclasses import dataclass
 from model import Model, Embedding
-from common import read_data_chunks, cosine_similarity
+from common import get_model, read_data_chunks, cosine_similarity
 
 
 @dataclass
@@ -70,7 +70,7 @@ def _retrieve_dfs(root: Node, query_embedding: Embedding, max_depth: int, min_si
 
 
 def retrieve(model: Model, nodes: list[Node], query: str, top_k: int, max_depth: int, min_similarity: float) -> list[Node]:
-    query_embedding = model._generate_embedding(query)
+    query_embedding = model.generate_embeddings([query])[0]
     similar_nodes = [(node, cosine_similarity(node.embedding, query_embedding)) for node in nodes]
     similar_nodes.sort(key=lambda x: x[1], reverse=True)
     similar_nodes = similar_nodes[:top_k]
@@ -91,15 +91,15 @@ def load_graph(filename: str) -> list['Node']:
         return pickle.load(file)
 
 
-def create_graph(input_txt_file: str = 'source.txt', output_bin_file: str = 'graph.bin'):
-    model = Model()
+def create_graph(input_txt_file: str = 'source.txt', output_bin_file: str = 'graph.bin', model_name: str = 'gemini'):
+    model = get_model(model_name)
     chunks = read_data_chunks(input_txt_file)
     nodes = create_nodes(model, chunks)
     save_graph(nodes, output_bin_file)
 
 
-def query_graph(query: str, graph_bin_file: str = 'graph.bin'):
-    model = Model()
+def query_graph(query: str, graph_bin_file: str = 'graph.bin', model_name: str = 'gemini'):
+    model = get_model(model_name)
     nodes = load_graph(graph_bin_file)
     results = retrieve(model, nodes, query, top_k=3, max_depth=4, min_similarity=0.3)
     for node in results:
