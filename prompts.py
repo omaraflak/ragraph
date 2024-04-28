@@ -59,19 +59,6 @@ question: {question}
 context: {context}
 """
 
-relevance_scoring = """You will be given a question.
-Your task is to provide a 'rating' representing how useful this question can be to machine learning developers building NLP applications with the Hugging Face ecosystem.
-Give your answer on a scale of 1 to 5, where 1 means that the question is not useful at all, and 5 means that the question is extremely useful.
-
-Example:
-question: How is written the exponential function in math?
-evaluation: The context specifies that the exponential function is written as exp(x).
-rating: 5
-
-Now it's your turn:
-question: {question}
-"""
-
 standalone_scoring = """You will be given a question.
 Your task is to provide a 'rating' representing how context-independant this question is.
 Give your answer on a scale of 1 to 5, where 1 means that the question depends on additional information to be understood, and 5 means that the question makes sense by itself.
@@ -79,14 +66,14 @@ For instance, if the question refers to a particular setting, like 'in the conte
 The questions can contain obscure technical nouns or acronyms like Gradio, Hub, Hugging Face or Space and still be a 5: it must simply be clear to an operator with access to documentation what the question is about.
 
 Example:
-question: What is the name of the checkpoint from which the ViT model is imported
-evaluation: There is an implicit mention of a context, thus the question is not independant from the context
-rating: 1
-
-Example:
 question: How is written the exponential function in math?
 evaluation: The question is free of context.
 rating: 5
+
+Example:
+question: What is the name of the checkpoint from which the ViT model is imported
+evaluation: There is an implicit mention of a context, thus the question is not independant from the context
+rating: 1
 
 Now it's your turn:
 question: {question}

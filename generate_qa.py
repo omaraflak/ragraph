@@ -31,15 +31,15 @@ class QuestionAnswerDataset(DataClassJsonMixin):
 
 def load_data_chunks(filename: str) -> list[str]:
     with open(filename, 'r') as f:
-        return f.read().split('.')
+        return [x.strip() for x in f.read().split('.') if x.strip()]
 
 
 def extract_key_values(text: str, keys: list[str]) -> dict[str, str]:
     results = {key: '' for key in keys}
     for line in text.splitlines():
-        values = line.split(':')
-        if len(values) == 2 and values[0] in keys:
-            results[values[0]] = values[1].strip()
+        index = line.find(':')
+        if index > 0:
+            results[line[:index].strip()] = line[index + 1:].strip()
     return results
 
 
