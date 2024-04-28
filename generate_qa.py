@@ -1,4 +1,5 @@
 import json
+import fire
 import prompts
 from model import Model
 from dataclasses import dataclass
@@ -82,12 +83,13 @@ def generate_dataset(model: Model, chunks: list[str]) -> QuestionAnswerDataset:
     return QuestionAnswerDataset(items)
 
 
-def main():
+def main(input_txt_file: str, output_json_file: str):
     model = Model()
-    chunks = load_data_chunks('source.txt')
+    chunks = load_data_chunks(input_txt_file)
     dataset = generate_dataset(model, chunks)
-    with open('dataset.json', 'w') as f:
+    with open(output_json_file, 'w') as f:
         json.dump(dataset.to_dict(), f, indent=2)
 
 
-main()
+if __name__ == '__main__':
+    fire.Fire(main)
