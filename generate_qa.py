@@ -2,6 +2,7 @@ import json
 import fire
 import prompts
 from model import Model
+from common import read_data_chunks
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin
 
@@ -28,11 +29,6 @@ class QuestionAnswerScore(DataClassJsonMixin):
 @dataclass
 class QuestionAnswerDataset(DataClassJsonMixin):
     items: list[QuestionAnswerScore]
-
-
-def load_data_chunks(filename: str) -> list[str]:
-    with open(filename, 'r') as f:
-        return [x.strip() for x in f.read().split('.') if x.strip()]
 
 
 def extract_key_values(text: str, keys: list[str]) -> dict[str, str]:
@@ -83,9 +79,9 @@ def generate_dataset(model: Model, chunks: list[str]) -> QuestionAnswerDataset:
     return QuestionAnswerDataset(items)
 
 
-def main(input_txt_file: str, output_json_file: str):
+def main(input_txt_file: str = 'source.txt', output_json_file: str = 'qa.json'):
     model = Model()
-    chunks = load_data_chunks(input_txt_file)
+    chunks = read_data_chunks(input_txt_file)
     dataset = generate_dataset(model, chunks)
     with open(output_json_file, 'w') as f:
         json.dump(dataset.to_dict(), f, indent=2)
